@@ -187,7 +187,7 @@ public class VoiceActivity extends AppCompatActivity {
         List<String> commands = new ArrayList<>();
         String cmd="", options="";
 
-/*        Log.i(TAG, "createCommands: ");
+       Log.i(TAG, "createCommands: ");
         Log.i(TAG, "=========================================");
         Log.i(TAG, "keyword : ");
         keywords.forEach(kw -> Log.i(TAG, kw));
@@ -199,7 +199,7 @@ public class VoiceActivity extends AppCompatActivity {
         Log.i(TAG, "contacts : ");
         if(contacts!=null)
             contacts.forEach(o -> Log.i(TAG, o.name));
-        Log.i(TAG, "=========================================");*/
+        Log.i(TAG, "=========================================");
 
         for (String keyword : keywords)
             cmd = keyword;
@@ -211,6 +211,9 @@ public class VoiceActivity extends AppCompatActivity {
             if(words!=null) {
                 options = words.stream().map(Object::toString).collect(Collectors.joining("+"));
                 commands.add(cmd + "\n" + options);
+            }
+            if(contacts==null && words==null) {
+                commands.add(cmd);
             }
         updateList(commands);
     }
@@ -254,8 +257,9 @@ public class VoiceActivity extends AppCompatActivity {
                 if(!others.isEmpty()) {
                     boolean forYoutube = keywords.stream().filter(kw->kw.contains("Youtube")).count()>0;
                     boolean forMaps = keywords.stream().filter(kw->kw.contains("Maps")).count()>0;
+                    boolean forGoogle = keywords.stream().filter(kw->kw.contains("Google")).count()>0;
 
-                    if(!forYoutube && !forMaps)
+                    if(!forYoutube && !forMaps && !forGoogle)
                         for (String search : others)
                             Query.searchContact(this, search, data -> {
                                 List<Query.Contact> contacts = (List<Query.Contact>) data;
@@ -267,6 +271,8 @@ public class VoiceActivity extends AppCompatActivity {
 
                         createCommands(keywords, null, clean_words);
                     }
+                }else {
+                    createCommands(keywords, null, null);
                 }
             }else {
                 Log.i(TAG, "analyzeCommand: keywords empty!!!!");
@@ -295,11 +301,10 @@ public class VoiceActivity extends AppCompatActivity {
                 != PackageManager.PERMISSION_GRANTED
                 || activity.checkSelfPermission(Manifest.permission.SEND_SMS)
                 != PackageManager.PERMISSION_GRANTED
-
-                /*  || activity.checkSelfPermission(Manifest.permission.INTERNET)
+                || activity.checkSelfPermission(Manifest.permission.INTERNET)
                 != PackageManager.PERMISSION_GRANTED
                 || activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED*/
+                != PackageManager.PERMISSION_GRANTED
                 ;
     }
     private void requestPermissions() {
@@ -309,10 +314,9 @@ public class VoiceActivity extends AppCompatActivity {
                 Manifest.permission.CAMERA,
                 Manifest.permission.READ_CONTACTS,
                 Manifest.permission.CALL_PHONE,
-                Manifest.permission.SEND_SMS
-
-                /*   Manifest.permission.INTERNET,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE*/
+                Manifest.permission.SEND_SMS,
+                Manifest.permission.INTERNET,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
         };
         requestPermissions(permissions, PERMISSIONS_REQUEST_ALL_PERMISSIONS);
     }
@@ -434,12 +438,17 @@ public class VoiceActivity extends AppCompatActivity {
                 address +=("".equals(address)?"":"+")+word;
             intent.putExtra("address",address);
             startActivity(intent);
+        } else if(cmd.contains("Google")) {
+            String query="";
+            for (String word:others )
+                    query +=("".equals(query)?"":"+")+word;
+            Util.gotoGoogle(VoiceActivity.this, query);
         }
-        else {
+        else if(cmd.contains("Photo")) {
+            Log.i(TAG, "commandToAction: call TakePictureActivity!!");
+            startActivity(new Intent(VoiceActivity.this, TakePictureActivity.class));
+        }else
             Toast.makeText(this, "other command : "+cmd, Toast.LENGTH_LONG).show();
-        }
-        /*else if(cmd.contains("Photo"))
-            startActivity(new Intent(VoiceActivity.this, TakePictureActivity.class));*/
 
     }
 

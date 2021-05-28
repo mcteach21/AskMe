@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">AskMe!</string>
+    <string name="intro_message">welcome</string>
+    <string name="description_info">description..</string>
 </resources>

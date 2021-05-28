@@ -44,19 +44,21 @@ public class Util {
         KeyWord galerie = new KeyWord("Galerie");
 
         KeyWord youtube = new KeyWord("Youtube");
+        KeyWord google = new KeyWord("Google");
         KeyWord maps = new KeyWord("Maps");
         //KeyWord viber = new KeyWord("Viber");
 
         sms.addSynonyms( Arrays.asList("sms","message","texto"));
         mail.addSynonyms( Arrays.asList("email","message"));
         call.addSynonyms( Arrays.asList("appel","appeler","téléphoner", "composer", "call", "allo"));
-        photo.addSynonyms( Arrays.asList("photos","cheese","sourire", "selfie", "wistiti"));
+        photo.addSynonyms( Arrays.asList("photos","cheese","sourire", "selfie", "wistiti", "ouistiti"));
         galerie.addSynonyms( Arrays.asList("galerie","maelys"));
 
         youtube.addSynonyms( Arrays.asList("vidéo","visionner","voir","regarder"));
         maps.addSynonyms( Arrays.asList("carte","adresse","situer","rue","avenue","boulevard"));
+        google.addSynonyms( Arrays.asList("chercher","trouver","internet"));
 
-        keywords.addAll(Arrays.asList(sms,mail,call,photo,youtube,maps));
+        keywords.addAll(Arrays.asList(sms,mail,call,photo,youtube,maps, google));
     }
     public static String formatKeyWord(String word){
         return word.substring(0,1).toUpperCase()+word.substring(1).toLowerCase();
@@ -75,7 +77,7 @@ public class Util {
     }
     public static String keyWordSynonym(String word){
         for (KeyWord kw: keywords)
-            if(kw.getSynonyms().contains(word)) {
+            if(kw.getSynonyms().contains(word.toLowerCase())) {
                 Log.i("samples", "Yes! Return : "+kw.getWord()+" ==> "+word.toLowerCase());
                 return kw.getWord();
             }
@@ -130,6 +132,10 @@ public class Util {
         Toast.makeText(context, "show video on youtube..", Toast.LENGTH_SHORT).show();
         context.startActivity(new Intent(Intent.ACTION_VIEW,
                 Uri.parse("https://www.youtube.com/results?search_query="+query)));
+    }
+    public static void gotoGoogle(Activity context, String query) {
+        context.startActivity(new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.google.com/search?q="+query)));
     }
 
     /**
