@@ -3,11 +3,16 @@ package mc.apps.voice.util;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
+import android.util.Log;
 import android.widget.Toast;
+
+import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Util {
 
@@ -37,7 +42,6 @@ public class Util {
         KeyWord call =  new KeyWord("Appel");
         KeyWord photo = new KeyWord("Photo");
         KeyWord galerie = new KeyWord("Galerie");
-
         KeyWord youtube = new KeyWord("Youtube");
         //KeyWord viber = new KeyWord("Viber");
 
@@ -46,7 +50,7 @@ public class Util {
         call.addSynonyms( Arrays.asList("appel","appeler","téléphoner", "composer", "call", "allo"));
         photo.addSynonyms( Arrays.asList("photos","cheese","sourire", "selfie", "wistiti"));
         galerie.addSynonyms( Arrays.asList("galerie","maelys"));
-        youtube.addSynonyms( Arrays.asList("vidéo","visionner"));
+        youtube.addSynonyms( Arrays.asList("vidéo","visionner","voir","regarder"));
 
         keywords.addAll(Arrays.asList(sms,mail,call,photo,youtube));
     }
@@ -61,15 +65,36 @@ public class Util {
     }
     public static boolean isKeyWordSynonym(String word){
         for (KeyWord kw: keywords)
-            if(kw.getSynonyms().contains(word.toLowerCase()))
+            if (kw.getSynonyms().contains(word.toLowerCase()))
                 return true;
         return false;
     }
     public static String keyWordSynonym(String word){
         for (KeyWord kw: keywords)
-            if(kw.getSynonyms().contains(word))
+            if(kw.getSynonyms().contains(word)) {
+                Log.i("samples", "Yes! Return : "+kw.getWord()+" ==> "+word.toLowerCase());
                 return kw.getWord();
+            }
         return null;
+    }
+
+    /**
+     * français - langue..
+     */
+    static String[] prepos_fr={"A","après","avant","avex","chez","concernant","contre","dans","de",
+            "depuis","derrière","dès","devant","durant","en","entre","envers","hormis",
+            "hors","jusque","malgré","moyennant","nonobstant","outre","par","parmi",
+            "pendant","pour","près","sans","sauf","selon","sous","suivant","sur",
+            "touchant","vers","via"};
+    static String[] search_exclude={"je", "un","une","de","des","le","la","les"}; //...verbes..
+    public static boolean isPreposition(String word){
+        return  Arrays.stream(prepos_fr).anyMatch(word::equals);
+    }
+    public static boolean isExcluded(String word){
+        return  Arrays.stream(search_exclude).anyMatch(word::equals);
+    }
+    public static List<String> cleanSearch(List<String> words){
+        return words.stream().filter(w->!isExcluded(w)).collect(Collectors.toList());
     }
 
     /**
@@ -99,6 +124,8 @@ public class Util {
     }
     public static void gotoYoutube(Activity context, String query) {
         Toast.makeText(context, "show video on youtube..", Toast.LENGTH_SHORT).show();
+        context.startActivity(new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.youtube.com/results?search_query="+query)));
     }
 
     /**

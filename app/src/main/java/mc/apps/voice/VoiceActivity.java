@@ -32,6 +32,10 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import javax.security.auth.login.LoginException;
 
 import mc.apps.voice.util.Query;
 import mc.apps.voice.util.Util;
@@ -179,24 +183,35 @@ public class VoiceActivity extends AppCompatActivity {
     }
 
 
-    private void createCommands(List<String> keywords, List<Query.Contact> contacts) {
+    private void createCommands(List<String> keywords, List<Query.Contact> contacts, List<String> words) {
         List<String> commands = new ArrayList<>();
-        String cmd="";
+        String cmd="", options="";
+
+/*        Log.i(TAG, "createCommands: ");
+        Log.i(TAG, "=========================================");
+        Log.i(TAG, "keyword : ");
+        keywords.forEach(kw -> Log.i(TAG, kw));
+        Log.i(TAG, "=========================================");
+        Log.i(TAG, "words : ");
+        if(words!=null)
+            words.forEach(o -> Log.i(TAG, o));
+        Log.i(TAG, "=========================================");
+        Log.i(TAG, "contacts : ");
+        if(contacts!=null)
+            contacts.forEach(o -> Log.i(TAG, o.name));
+        Log.i(TAG, "=========================================");*/
+
         for (String keyword : keywords)
             cmd = keyword;
-            if (!contacts.isEmpty())
-                for (Query.Contact contact : contacts)
-                    commands.add(cmd + "\n" + contact.name+ "\n" + contact.phoneNumber + (contact.email==null?"":"\n" + contact.email));
-            else
-                commands.add(cmd);
-
-        Log.i(TAG, "**********************************");
-        for (String command : commands)
-            Log.i(TAG, command);
-        Log.i(TAG, "**********************************");
-
-        //Recyclerviews.Init(findViewById(R.id.list), commands, R.layout.item_layout, R.id.item_title);
-
+            if(contacts!=null)
+                for (Query.Contact contact : contacts) {
+                    options = contact.name + "\n" + contact.phoneNumber + (contact.email == null ? "" : "\n" + contact.email);
+                    commands.add(cmd + "\n" + options);
+                }
+            if(words!=null) {
+                options = words.stream().map(Object::toString).collect(Collectors.joining("+"));
+                commands.add(cmd + "\n" + options);
+            }
         updateList(commands);
     }
 
@@ -215,34 +230,45 @@ public class VoiceActivity extends AppCompatActivity {
         adapter.updateData(commands);
     }
 
+    List<String> others;
     private void analyzeCommand(String command){
             String[] words = command.split(" ");
             List<String> keywords = new ArrayList<>();
-            List<String> others = new ArrayList<>();
+            others = new ArrayList<>();
             for (String word : words) {
                 if (!word.trim().isEmpty()) {
-                    Log.i(TAG, "analyzeCommand: " + word);
+                    Log.i(TAG, "analyze Command/Word : " + word);
+
                     if (Util.isKeyWord(word))
                         keywords.add(Util.formatKeyWord(word));
-                    else if (Util.isKeyWordSynonym(word))
+                    else if (Util.isKeyWordSynonym(word)) {
+                        Log.i(TAG, "analyzeCommand - Synonym : "+word);
                         keywords.add(word + " (" + Util.keyWordSynonym(word) + ")");
-                    else
+                    }else
                         others.add(word);
                 }
             }
 
             updateList(new ArrayList<>());
             if(!keywords.isEmpty()) {
-                if(!others.isEmpty())
-                    for (String search : others)
-                        Query.searchContact(this,search, data -> {
-                            List<Query.Contact> contacts = (List<Query.Contact>) data;
-                            createCommands(keywords, contacts);
-                        });
-                else
-                    createCommands(keywords, new ArrayList<Query.Contact>());
-            }
+                if(!others.isEmpty()) {
+                    boolean forYoutube = keywords.stream().filter(kw->kw.contains("Youtube")).count()>0;
+                    if(!forYoutube)
+                        for (String search : others)
+                            Query.searchContact(this, search, data -> {
+                                List<Query.Contact> contacts = (List<Query.Contact>) data;
+                                createCommands(keywords, contacts, null);
+                            });
+                    else{
+                        List<String> clean_words = others.stream().filter(x->!Util.isPreposition(x)).collect(Collectors.toList());
+                        clean_words = Util.cleanSearch(clean_words); //exclude words..
 
+                        createCommands(keywords, null, clean_words);
+                    }
+                }
+            }else {
+                Log.i(TAG, "analyzeCommand: keywords empty!!!!");
+            }
     }
 
     @Override
@@ -322,20 +348,17 @@ public class VoiceActivity extends AppCompatActivity {
     class CommandsAdapter extends RecyclerView.Adapter<CommandsAdapter.CommandViewHolder>{
         private static final String TAG = "samples" ;
         private static final long FADE_DURATION = 500 ;
-
         List<String> data;
         public CommandsAdapter(List<String> data){
             this.data = data;
         }
         public void updateData(List<String> items){
-            Log.i(TAG, "updateData: "+items.size());
             this.data.clear();
             this.data.addAll(items);
 
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 public void run() {
                     notifyDataSetChanged();
-                    Log.i(TAG, "notifyDataSetChanged!!");
                 }
             });
         }
@@ -346,46 +369,32 @@ public class VoiceActivity extends AppCompatActivity {
             View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout, parent, false);
             return new CommandViewHolder(itemView);
         }
-
         @Override
         public void onBindViewHolder(@NonNull CommandViewHolder holder, int position) {
-            Log.i(TAG  , "onBindViewHolder: "+data.get(position));
             holder.item_title.setText(data.get(position));
             setFadeAnimation(holder.itemView);
         }
-
         private void setFadeAnimation(View view) {
             AlphaAnimation anim = new AlphaAnimation(0.0f, 1.0f);
             anim.setDuration(FADE_DURATION);
             view.startAnimation(anim);
         }
-
-
         @Override
         public int getItemCount() {
-            Log.i(TAG  , "getItemCount: "+data.size());
             return data.size();
         }
-
         class CommandViewHolder extends RecyclerView.ViewHolder {
             TextView item_title;
-
-
             public CommandViewHolder(@NonNull View itemView) {
                 super(itemView);
                 item_title = itemView.findViewById(R.id.item_title);
-
                 itemView.setOnClickListener(view -> {
                     String text = data.get(getAdapterPosition());
                     item_title.setTextColor(getResources().getColor(R.color.colorAccent, null));
-
                     commandToAction(text);
                 });
-
                 //itemView.setOnLongClickListener(view -> {animate(itemView); return false;});
-
             }
-
         }
     }
 
@@ -405,8 +414,17 @@ public class VoiceActivity extends AppCompatActivity {
             Util.sendEmail(VoiceActivity.this, email,"Hello from Jarvis!");
         else if(cmd.contains("Viber"))
             callViberChat(phone);
-        else if(cmd.contains("Youtube"))
-            Util.gotoYoutube(VoiceActivity.this,"vidéo..");
+        else if(cmd.contains("Youtube")) {
+            Log.i(TAG, "==================================");
+            String query="";
+            for (String word:others ) {
+                if (!Util.isPreposition(word))
+                    query +=("".equals(query)?"":"+")+word;
+            }
+            Log.i(TAG, "commandToAction: "+query);
+            Log.i(TAG, "==================================");
+            Util.gotoYoutube(VoiceActivity.this, query);
+        }
         /*else if(cmd.contains("Photo"))
             startActivity(new Intent(VoiceActivity.this, TakePictureActivity.class));*/
 
