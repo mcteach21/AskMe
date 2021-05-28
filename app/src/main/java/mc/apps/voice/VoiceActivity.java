@@ -253,7 +253,9 @@ public class VoiceActivity extends AppCompatActivity {
             if(!keywords.isEmpty()) {
                 if(!others.isEmpty()) {
                     boolean forYoutube = keywords.stream().filter(kw->kw.contains("Youtube")).count()>0;
-                    if(!forYoutube)
+                    boolean forMaps = keywords.stream().filter(kw->kw.contains("Maps")).count()>0;
+
+                    if(!forYoutube && !forMaps)
                         for (String search : others)
                             Query.searchContact(this, search, data -> {
                                 List<Query.Contact> contacts = (List<Query.Contact>) data;
@@ -415,15 +417,26 @@ public class VoiceActivity extends AppCompatActivity {
         else if(cmd.contains("Viber"))
             callViberChat(phone);
         else if(cmd.contains("Youtube")) {
-            Log.i(TAG, "==================================");
+            /*Log.i(TAG, "==================================");*/
             String query="";
             for (String word:others ) {
                 if (!Util.isPreposition(word))
                     query +=("".equals(query)?"":"+")+word;
             }
-            Log.i(TAG, "commandToAction: "+query);
-            Log.i(TAG, "==================================");
+            /*Log.i(TAG, "commandToAction: "+query);
+            Log.i(TAG, "==================================");*/
             Util.gotoYoutube(VoiceActivity.this, query);
+        }else if(cmd.contains("Maps")){
+            Intent intent = new Intent(VoiceActivity.this, MapsActivity.class);
+
+            String address="";
+            for (String word:others)
+                address +=("".equals(address)?"":"+")+word;
+            intent.putExtra("address",address);
+            startActivity(intent);
+        }
+        else {
+            Toast.makeText(this, "other command : "+cmd, Toast.LENGTH_LONG).show();
         }
         /*else if(cmd.contains("Photo"))
             startActivity(new Intent(VoiceActivity.this, TakePictureActivity.class));*/

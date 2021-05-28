@@ -42,7 +42,9 @@ public class Util {
         KeyWord call =  new KeyWord("Appel");
         KeyWord photo = new KeyWord("Photo");
         KeyWord galerie = new KeyWord("Galerie");
+
         KeyWord youtube = new KeyWord("Youtube");
+        KeyWord maps = new KeyWord("Maps");
         //KeyWord viber = new KeyWord("Viber");
 
         sms.addSynonyms( Arrays.asList("sms","message","texto"));
@@ -50,9 +52,11 @@ public class Util {
         call.addSynonyms( Arrays.asList("appel","appeler","téléphoner", "composer", "call", "allo"));
         photo.addSynonyms( Arrays.asList("photos","cheese","sourire", "selfie", "wistiti"));
         galerie.addSynonyms( Arrays.asList("galerie","maelys"));
-        youtube.addSynonyms( Arrays.asList("vidéo","visionner","voir","regarder"));
 
-        keywords.addAll(Arrays.asList(sms,mail,call,photo,youtube));
+        youtube.addSynonyms( Arrays.asList("vidéo","visionner","voir","regarder"));
+        maps.addSynonyms( Arrays.asList("carte","adresse","situer","rue","avenue","boulevard"));
+
+        keywords.addAll(Arrays.asList(sms,mail,call,photo,youtube,maps));
     }
     public static String formatKeyWord(String word){
         return word.substring(0,1).toUpperCase()+word.substring(1).toLowerCase();
@@ -85,8 +89,8 @@ public class Util {
             "depuis","derrière","dès","devant","durant","en","entre","envers","hormis",
             "hors","jusque","malgré","moyennant","nonobstant","outre","par","parmi",
             "pendant","pour","près","sans","sauf","selon","sous","suivant","sur",
-            "touchant","vers","via"};
-    static String[] search_exclude={"je", "un","une","de","des","le","la","les"}; //...verbes..
+            "touchant","vers","via", "et"};
+    static String[] search_exclude={"je", "un","une","de","des","le","la","les", "veux", "vidéos"}; //...verbes..
     public static boolean isPreposition(String word){
         return  Arrays.stream(prepos_fr).anyMatch(word::equals);
     }
