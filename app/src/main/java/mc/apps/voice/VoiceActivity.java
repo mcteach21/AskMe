@@ -30,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
@@ -99,7 +100,7 @@ public class VoiceActivity extends AppCompatActivity {
                         message = "Audio recording error";
                         break;
                     case SpeechRecognizer.ERROR_CLIENT:
-                        message = "Client side error";
+                        message = "?";
                         break;
                     case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
                         message = "Insufficient permissions";
@@ -187,34 +188,42 @@ public class VoiceActivity extends AppCompatActivity {
         List<String> commands = new ArrayList<>();
         String cmd="", options="";
 
-       Log.i(TAG, "createCommands: ");
-        Log.i(TAG, "=========================================");
-        Log.i(TAG, "keyword : ");
+        Log.i(TAG, "*****************************************");
+        Log.i(TAG, "Create Commands - Keywords: ");
         keywords.forEach(kw -> Log.i(TAG, kw));
-        Log.i(TAG, "=========================================");
-        Log.i(TAG, "words : ");
+        Log.i(TAG, "*****************************************");
+
+        Log.i(TAG, "Create Commands - Words: ");
         if(words!=null)
             words.forEach(o -> Log.i(TAG, o));
-        Log.i(TAG, "=========================================");
-        Log.i(TAG, "contacts : ");
+        Log.i(TAG, "*****************************************");
+
+        Log.i(TAG, "Create Commands - contacts: ");
         if(contacts!=null)
             contacts.forEach(o -> Log.i(TAG, o.name));
         Log.i(TAG, "=========================================");
 
-        for (String keyword : keywords)
+        for (String keyword : keywords) {
             cmd = keyword;
-            if(contacts!=null)
+            if (contacts != null)
                 for (Query.Contact contact : contacts) {
                     options = contact.name + "\n" + contact.phoneNumber + (contact.email == null ? "" : "\n" + contact.email);
                     commands.add(cmd + "\n" + options);
                 }
-            if(words!=null) {
+            if (words != null) {
                 options = words.stream().map(Object::toString).collect(Collectors.joining("+"));
-                commands.add(cmd + "\n" + options);
+
+                if(!options.equals("?") && !options.isEmpty())
+                    commands.add(cmd + "\n" + options);
+
+                Log.i(TAG, "Create Commands - Cmd+Options = "+cmd + "+" + options);
             }
-            if(contacts==null && words==null) {
+            if (contacts == null && words == null) {
                 commands.add(cmd);
             }
+        }
+
+
         updateList(commands);
     }
 
@@ -253,29 +262,32 @@ public class VoiceActivity extends AppCompatActivity {
             }
 
             updateList(new ArrayList<>());
-            if(!keywords.isEmpty()) {
-                if(!others.isEmpty()) {
-                    boolean forYoutube = keywords.stream().filter(kw->kw.contains("Youtube")).count()>0;
-                    boolean forMaps = keywords.stream().filter(kw->kw.contains("Maps")).count()>0;
-                    boolean forGoogle = keywords.stream().filter(kw->kw.contains("Google")).count()>0;
 
-                    if(!forYoutube && !forMaps && !forGoogle)
-                        for (String search : others)
-                            Query.searchContact(this, search, data -> {
-                                List<Query.Contact> contacts = (List<Query.Contact>) data;
-                                createCommands(keywords, contacts, null);
-                            });
-                    else{
-                        List<String> clean_words = others.stream().filter(x->!Util.isPreposition(x)).collect(Collectors.toList());
-                        clean_words = Util.cleanSearch(clean_words); //exclude words..
+            if(keywords.isEmpty()) {
+                //Log.i(TAG, "analyzeCommand: keywords empty!!!!");
+                keywords.addAll(Arrays.asList("Google","Youtube")); //default
+                //keywords.add("internet"); //default
+            }
 
-                        createCommands(keywords, null, clean_words);
-                    }
-                }else {
-                    createCommands(keywords, null, null);
+            if(!others.isEmpty()) {
+                boolean forYoutube = keywords.stream().filter(kw->kw.contains("Youtube")).count()>0;
+                boolean forMaps = keywords.stream().filter(kw->kw.contains("Maps")).count()>0;
+                boolean forGoogle = keywords.stream().filter(kw->kw.contains("Google")).count()>0;
+
+                if(!forYoutube && !forMaps && !forGoogle)
+                    for (String search : others)
+                        Query.searchContact(this, search, data -> {
+                            List<Query.Contact> contacts = (List<Query.Contact>) data;
+                            createCommands(keywords, contacts, null);
+                        });
+                else{
+                    List<String> clean_words = others.stream().filter(x->!Util.isPreposition(x)).collect(Collectors.toList());
+                    clean_words = Util.cleanSearch(clean_words); //exclude words..
+
+                    createCommands(keywords, null, clean_words);
                 }
             }else {
-                Log.i(TAG, "analyzeCommand: keywords empty!!!!");
+                createCommands(keywords, null, null);
             }
     }
 
